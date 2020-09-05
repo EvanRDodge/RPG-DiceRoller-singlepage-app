@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Dice Roller</title>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<!-- fonts -->
+		<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@400;700&display=swap" rel="stylesheet">
+		<!-- style sheets -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+		<style>
+			h1 {
+				margin: 0;
+				padding: 0;
+				max-width: 27rem;
+				text-align: center;
+				font-family: 'Grenze Gotisch', cursive;
+			}
+			h2 {
+				margin: 0;
+				padding: 1rem;
+				display: block;
+				text-align: center;
+				font-family: 'Grenze Gotisch', cursive;
+			}
+			h4 {
+				margin: 0;
+				padding: 0;
+			}
+			.individual-rolls {
+				margin: 0;
+				padding: 0;
+				max-width: 27rem;
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				background: darkorange;
+			}
+			.individual-rolls h2 {
+				display: block;
+				flex: 100%;
+			}
+			.individual-rolls input {
+				display: inline-block;
+			}
+			.individual-rolls button {
+				min-width: 10rem;
+				display: inline-block;
+			}
+			.expression-rolls {
+				margin: 0;
+				padding: 0;
+				max-width: 27rem;
+				background: cadetblue;
+			}
+			.log {
+				margin: 0;
+				padding: 0;
+				max-width: 27rem;
+				background: olivedrab;
+			}
+			.log textarea {
+				width: 26rem;
+			}
+		</style>
+		<!-- scripts -->
+		<script type="application/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.2.0/math.js"></script>
+	</head>
+	<body onload="clearResults()">
+		<header>
+			<h1>Dice Roller</h1>
+		</header>
+		<section class="app-content">
+			<div class="individual-rolls">
+				<h2>Individual Dice</h2>
+				<button id="button-4sided" class="button-die" type="button">Roll 4-Sided Die</button>
+				<input id="results-4sided" class="result-die" type="text" placeholder="results" readonly size="3">
+				<button id="button-6sided" class="button-die" type="button">Roll 6-Sided Die</button>
+				<input id="results-6sided" class="result-die" type="text" placeholder="results" readonly size="3">
+				<button id="button-8sided" class="button-die" type="button">Roll 8-Sided Die</button>
+				<input id="results-8sided" class="result-die" type="text" placeholder="results" readonly size="3">
+				<button id="button-10sided" class="button-die" type="button">Roll 10-Sided Die</button>
+				<input id="results-10sided" class="result-die" type="text" placeholder="results" readonly size="3">
+				<button id="button-12sided" class="button-die" type="button">Roll 12-Sided Die</button>
+				<input id="results-12sided" class="result-die" type="text" placeholder="results" readonly size="3">
+				<button id="button-20sided" class="button-die" type="button">Roll 20-Sided Die</button>
+				<input id="results-20sided" class="result-die" type="text" placeholder="results" readonly size="3">
+			</div>
+			<div class="expression-rolls">
+				<h2>Die Roll Expressions</h2>
+				<h4>Ex: 1d20, 1d8 + 3, 2 * (1d6 + 4) + 3d4 + 5, etc...</h4>
+				<input id="field-expression1" class="field-expression" type="text" placeholder="Enter a roll expression" size="30">
+				<button id="button-expression1" class="button-expression">Roll Expression</button>
+				<input id="results-expression1" class="result-expression" type="text" placeholder="results" readonly size="6">
+				<br>
+				<input id="field-expression2" class="field-expression" type="text" placeholder="Enter a roll expression" size="30">
+				<button id="button-expression2" class="button-expression">Roll Expression</button>
+				<input id="results-expression2" class="result-expression" type="text" placeholder="results" readonly size="6">
+				<br>
+				<input id="field-expression3" class="field-expression" type="text" placeholder="Enter a roll expression" size="30">
+				<button id="button-expression3" class="button-expression">Roll Expression</button>
+				<input id="results-expression3" class="result-expression" type="text" placeholder="results" readonly size="6">
+			</div>
+			
+			<div class="log">
+				<h2>Roll Log</h2>
+				<textarea id="results-log" rows="10" cols="50" readonly>The results of your rolls will be logged here.</textarea>
+				<br>
+				<button id="button-reset" type="button">Clear Log</button>
+			</div>
+			
+		</section>
+		
+		<script type="application/javascript">
+			//resets the contents of the text area log to the initial message
+			function clearResults(){
+				document.getElementById("results-log").value = "The results of your rolls will be logged here.";
+			}
+			//generates a random number from 1 to the number of sides specified
+			function roll(sides) {
+				return Math.floor(Math.random() * sides) + 1;
+			}
+			//prints the roll expression and the results to the text area log
+			function logRoll(rollExp, result) {
+				let date = new Date();
+				let entry = "\n@" + date.getHours() + ":" + date.getMinutes() + " Rolled: " + rollExp + " = " + result;
+				let ta = document.getElementById("results-log");
+				ta.value += entry;
+				ta.scrollTop = ta.scrollHeight;
+			}
+			//processes a die roll expression
+			function parseRollExpression(exp) {
+				//check for invalid characters
+				exp = exp.replace(/ /g, "");
+				if(exp.search(/[^0123456789Dd\+\-\*\/\(\)]/) != -1) {
+					return "Invalid Characters in Expression!";
+				}
+				//search for and replace each die roll operations with the result of the corresponding die roll.			
+				while(exp.search(/[0-9]+(d|D)[0-9]+/) != -1) {
+					let dieOperationStart = exp.search(/[0-9]+(d|D)[0-9]+/);
+					let dieOperationEnd = dieOperationStart + exp.match(/[0-9]+(d|D)[0-9]+/)[0].length;
+					let subexp = exp.substring(dieOperationStart, dieOperationEnd);
+					let rollNumbers = subexp.match(/[0-9]+/g);
+					let dieOperationResult = 0;
+					//roll and sum up the dice
+					for(i = 0; i < parseInt(rollNumbers[0]); i++) {
+						dieOperationResult += roll(parseInt(rollNumbers[1]));
+					}
+					exp = exp.replace(subexp, "" + dieOperationResult);
+				}
+				//evaluate the remaining expression mathematically
+				return math.evaluate(exp);
+			}
+			//event handler that handles button clicks
+			function eventClickHandler(eventObj) {
+				eventObj.preventDefault();
+				//individual die roll buttons generate a roll for their corresponding die and display the result in their results text field as well as in the log.
+				if(eventObj.target == document.getElementById("button-4sided")) {
+					let result = roll(4);
+					document.getElementById("results-4sided").value = result;
+					logRoll("1d4", result);
+				}
+				else if(eventObj.target == document.getElementById("button-6sided")) {
+					let result = roll(6);
+					document.getElementById("results-6sided").value = result;
+					logRoll("1d6", result);
+				}
+				else if(eventObj.target == document.getElementById("button-8sided")) {
+					let result = roll(8);
+					document.getElementById("results-8sided").value = result;
+					logRoll("1d8", result);
+				}
+				else if(eventObj.target == document.getElementById("button-10sided")) {
+					let result = roll(10);
+					document.getElementById("results-10sided").value = result;
+					logRoll("1d10", result);
+				}
+				else if(eventObj.target == document.getElementById("button-12sided")) {
+					let result = roll(12);
+					document.getElementById("results-12sided").value = result;
+					logRoll("1d12", result);
+				}
+				else if(eventObj.target == document.getElementById("button-20sided")) {
+					let result = roll(20);
+					document.getElementById("results-20sided").value = result;
+					logRoll("1d20", result);
+				}
+				//die roll expression buttons process the expression in their corresponding text field and display the result in their results text field as well as in the log.
+				else if(eventObj.target == document.getElementById("button-expression1")) {
+					let rollExpression = document.getElementById("field-expression1").value.replace(/ /g, "");
+					let result = parseRollExpression(rollExpression)
+					document.getElementById("results-expression1").value = result;
+					logRoll(rollExpression, result);
+				}
+				else if(eventObj.target == document.getElementById("button-expression2")) {
+					let rollExpression = document.getElementById("field-expression2").value.replace(/ /g, "");
+					let result = parseRollExpression(rollExpression)
+					document.getElementById("results-expression2").value = result;
+					logRoll(rollExpression, result);
+				}
+				else if(eventObj.target == document.getElementById("button-expression3")) {
+					let rollExpression = document.getElementById("field-expression3").value.replace(/ /g, "");
+					let result = parseRollExpression(rollExpression)
+					document.getElementById("results-expression3").value = result;
+					logRoll(rollExpression, result);
+				}
+				//clears the log when the clear log button is clicked
+				else if(eventObj.target == document.getElementById("button-reset")) {
+					clearResults();
+				}
+			}
+			//add event listner to document to handle click events
+			document.addEventListener("click", eventClickHandler);
+		</script>
+	</body>
+</html>
