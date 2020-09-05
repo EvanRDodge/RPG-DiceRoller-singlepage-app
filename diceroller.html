@@ -130,7 +130,7 @@
 			}
 			//processes a die roll expression
 			function parseRollExpression(exp) {
-				//check for invalid characters
+				//remove spaces and check for invalid characters
 				exp = exp.replace(/ /g, "");
 				if(exp.search(/[^0123456789Dd\+\-\*\/\(\)]/) != -1) {
 					return "Invalid Characters in Expression!";
@@ -149,7 +149,12 @@
 					exp = exp.replace(subexp, "" + dieOperationResult);
 				}
 				//evaluate the remaining expression mathematically
-				return math.evaluate(exp);
+				try{
+					return math.evaluate(exp);
+				}
+				catch(exc) {
+					return exc;
+				}
 			}
 			//event handler that handles button clicks
 			function eventClickHandler(eventObj) {
